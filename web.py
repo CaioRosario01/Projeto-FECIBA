@@ -1,138 +1,139 @@
-# Importa as bibliotecas necessárias
-import streamlit as st          # Interface web
-import pandas as pd            # Manipulação de dados
-from mapa import criar_mapa
-from streamlit_folium import st_folium
+# =================================================================
+# BIBLIOTECAS E IMPORTAÇÕES
+# =================================================================
+import streamlit as st          # Framework para interface web
+import pandas as pd             # Manipulação e análise de dados
+from mapa import criar_mapa      # Função customizada para o mapa
+from streamlit_folium import st_folium  # Integração Folium/Streamlit
 
-# -----------------------------
-# Leitura e preparação dos dados
-# -----------------------------
+# =================================================================
+# CONFIGURAÇÃO DA PÁGINA
+# =================================================================
+st.set_page_config(page_title="Balneabilidade Ilhéus", layout="wide")
 
-# Lê o arquivo CSV com os dados das praias
+# =================================================================
+# LEITURA E TRATAMENTO DOS DADOS
+# =================================================================
+# Carrega a base de dados
 df = pd.read_csv("dados/dados_praias.csv")
 
+# Padronização de nomes (Case sensitive)
 df = df.replace('propria', 'Própria')
 df = df.replace('impropria', 'Imprópria')
 
-# Converte a coluna "data" para o tipo datetime (facilita análises temporais)
+# Conversão de tipos: string para data
 df["data"] = pd.to_datetime(df["data"])
 
+# Cálculo do índice de risco global (Score: 1 para Imprópria, 0 para Própria)
+df["score"] = df["Classificação"].apply(lambda x: 1 if x == "Imprópria" else 0)
+risco = df.groupby("Praia")["score"].mean().sort_values()
 
-# -----------------------------
-# Configuração da página
-# -----------------------------
-
-# Define título da aba e layout (wide = tela mais larga)
-st.set_page_config(page_title="Balneabilidade Ilhéus", layout="wide")
-
-# Título principal do sistema
+# =================================================================
+# CABEÇALHO DA INTERFACE
+# =================================================================
 st.title("PraiaCheck: Sistema de Balneabilidade - Ilhéus")
-
-# Pequena descrição
 st.markdown("Divulgação da qualidade da água nas praias de Ilhéus")
 st.info("ℹ️ Veja mais informações sobre o Projeto PraiaCheck na barra lateral")
 
-
-# -----------------------------
-# Filtro por praia
-# -----------------------------
-
-# Cria um seletor com os nomes das praias (ordenados)
+# =================================================================
+# FILTROS E LÓGICA DE SELEÇÃO
+# =================================================================
+# Seletor de praias disponível na base
 praia = st.selectbox(
     "Escolha a praia:",
     sorted(df["Praia"].unique())
 )
 
-# Filtra o dataframe apenas para a praia selecionada
+# Filtra dados específicos da praia escolhida e ordena pela data mais recente
 df_filtrado = df[df["Praia"] == praia]
+df_filtrado = df_filtrado.sort_values("data", ascending=False)
 
-
-# -----------------------------
-# Cálculo do índice de risco
-# -----------------------------
-
-# Cria uma coluna "score":
-# 1 = imprópria
-# 0 = própria
-df["score"] = df["Classificação"].apply(lambda x: 1 if x == "Imprópria" else 0)
-
-# Agrupa por praia e calcula a média do score
-# Isso representa a frequência de vezes que a praia esteve imprópria
-risco = df.groupby("Praia")["score"].mean().sort_values()
-
-
-# -----------------------------
-# Estilização da tabela
-# -----------------------------
-
-# Função para colorir a classificação
+# =================================================================
+# EXIBIÇÃO DA TABELA (COM LÓGICA DE EXPANSÃO)
+# =================================================================
+# Estilização condicional (Cores: Verde para Própria, Vermelho para Imprópria)
 def cor_classificacao(val):
     if val == "Imprópria":
-        return "color: red"    # Vermelho para imprópria
+        return "color: red"
     else:
-        return "color: green"  # Verde para própria
+        return "color: green"
 
-# Exibe a tabela filtrada com cores na coluna "Classificação"
+# Controle de estado para o botão "Ver Mais"
+if 'ver_tudo' not in st.session_state:
+    st.session_state.ver_tudo = False
+
+# Define se exibe apenas as 4 últimas ou o histórico completo
+if st.session_state.ver_tudo:
+    df_exibicao = df_filtrado
+    texto_botao = "Ver menos"
+else:
+    df_exibicao = df_filtrado.head(4)
+    texto_botao = "Ver mais"
+
+# Renderização do DataFrame
 st.dataframe(
-    df_filtrado.style.map(cor_classificacao, subset=["Classificação"]),
+    df_exibicao.style.map(cor_classificacao, subset=["Classificação"]),
     column_config={
         "data": st.column_config.DateColumn(
             "Data da Coleta",
-            format="DD/MM/YYYY",  # Formato brasileiro
+            format="DD/MM/YYYY",
+            width="150px"
         ),
+        "score": None  # Esconde a coluna de score
     },
-    use_container_width=True
+    use_container_width=True,
+    hide_index=True  # Remove a coluna de índices numéricos
 )
 
-# -----------------------------
-# Métricas (resumo dos dados)
-# -----------------------------
+# Botão de alternância (Toggle)
+if st.button(texto_botao):
+    st.session_state.ver_tudo = not st.session_state.ver_tudo
+    st.rerun()
 
-# Total de registros da praia selecionada
+# =================================================================
+# MÉTRICAS GERAIS DA PRAIA SELECIONADA
+# =================================================================
 total = len(df_filtrado)
-
-# Quantidade de análises próprias
 proprias = (df_filtrado["Classificação"] == "Própria").sum()
-
-# Quantidade de análises impróprias
 improprias = (df_filtrado["Classificação"] == "Imprópria").sum()
 
-# Cria 3 colunas para exibir os indicadores
 col1, col2, col3 = st.columns(3)
-
-# Exibe os indicadores
 col1.metric("Total de análises", total)
 col2.metric("Próprias", proprias)
 col3.metric("Impróprias", improprias)
 
-
-# -----------------------------
-# Indicador de qualidade da praia
-# -----------------------------
-
+# =================================================================
+# STATUS ATUAL E ALERTAS
+# =================================================================
 st.divider()
-
 st.subheader("Situação atual da praia")
 
-col1, col2 = st.columns([2, 1])
+col_status, col_metric_total = st.columns([2, 1])
 
-with col1:
-    ultima_classificacao = df_filtrado.sort_values("data").iloc[-1]["Classificação"]
-    ultima_data = df_filtrado["data"].max()
+if not df_filtrado.empty:
+    with col_status:
+        # Pega a análise mais recente cronologicamente
+        ultima_classificacao = df_filtrado.sort_values("data").iloc[-1]["Classificação"]
+        ultima_data = df_filtrado["data"].max()
 
-    if ultima_classificacao == "Imprópria":
-        st.error("⚠️ Água imprópria para banho")
-    else:
-        st.success("✅ Água própria para banho")
+        if ultima_classificacao == "Imprópria":
+            st.error("⚠️ Água imprópria para banho")
+        else:
+            st.success("✅ Água própria para banho")
+        
+        st.caption(f"Última análise: {ultima_data.date()}")
 
-    st.caption(f"Última análise: {ultima_data.date()}")
+    with col_metric_total:
+        st.metric("Total de análises", len(df_filtrado))
+else:
+    st.warning("Não há dados disponíveis para esta praia.")
 
-with col2:
-    st.metric(
-        "Total de análises",
-        len(df_filtrado)
-    )
+# =================================================================
+# MAPA GEOGRÁFICO
+# =================================================================
+st.subheader("Mapa das praias: ")
 
+# Dicionário de Coordenadas (Latitude, Longitude)
 coordenadas = {
     "Avenida": [-14.801595691198887, -39.02990331527904],
     "Barra de São Miguel": [-14.762791385731225, -39.05797959772375],
@@ -146,27 +147,19 @@ coordenadas = {
     "Ceplus Jusante": [-14.840597153780113, -39.02471812572864],
     "Milionários": [-14.864563935948906, -39.024144443154846],
     "Olivença": [-14.93016272245089, -39.01641369689538],
-
 }
 
-if not df_filtrado.empty:
-    ultima_classificacao = df_filtrado.sort_values("data").iloc[-1]["Classificação"]
-    # ... resto do código
-else:
-    st.warning("Não há dados disponíveis para esta praia.")
-
-st.subheader("Mapa das praias: ")
-
+# Centralização e exibição do mapa via Folium
 mapa = criar_mapa(df, coordenadas)
-
-#Centralizando o mapa
-col1, col2, col3 = st.columns([1, 3, 1])
-
-with col2:
+c1, c2, c3 = st.columns([1, 3, 1])
+with c2:
     st_folium(mapa, width=800, height=500)
 
-st.sidebar.title("Sobre")
 
+# =================================================================
+# BARRA LATERAL (SIDEBAR) - SOBRE O PROJETO
+# =================================================================
+st.sidebar.title("Sobre")
 st.sidebar.markdown("""
 **Projeto:** Deu Praia  
 
@@ -176,8 +169,6 @@ com o objetivo de apresentar dados sobre a qualidade da água das praias de Ilh�
 
 O projeto utiliza dados públicos de balneabilidade, organizados e analisados por meio de Python, 
 com o intuito de facilitar o acesso à informação pela população ilheense.
-                    
-
 
 **Equipe:**
 - Adriel de Jesus
@@ -185,3 +176,7 @@ com o intuito de facilitar o acesso à informação pela população ilheense.
 - Thiago Adão
 - Lara Cryssa
 """)
+
+
+#Fonte dos dados
+st.sidebar.markdown("**Fonte dos dados:** INEMA - Boletins de Balneabilidade")
