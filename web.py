@@ -60,7 +60,7 @@ st.info("ℹ️ Veja mais informações sobre o Projeto PraiaCheck na barra late
 # FILTROS E LÓGICA DE SELEÇÃO
 # =================================================================
 # Seletor de praias disponível na base
-praia = st.selectbox(
+praia = st.pills(
     "Escolha a praia:",
     sorted(df["Praia"].unique())
 )
@@ -112,18 +112,6 @@ if st.button(texto_botao):
     st.rerun()
 
 # =================================================================
-# MÉTRICAS GERAIS DA PRAIA SELECIONADA
-# =================================================================
-total = len(df_filtrado)
-proprias = (df_filtrado["Classificação"] == "Própria").sum()
-improprias = (df_filtrado["Classificação"] == "Imprópria").sum()
-
-col1, col2, col3 = st.columns(3)
-col1.metric("Total de análises", total)
-col2.metric("Próprias", proprias)
-col3.metric("Impróprias", improprias)
-
-# =================================================================
 # STATUS ATUAL E ALERTAS
 # =================================================================
 st.divider()
@@ -144,10 +132,20 @@ if not df_filtrado.empty:
         
         st.caption(f"Última análise: {ultima_data.date()}")
 
-    with col_metric_total:
-        st.metric("Total de análises", len(df_filtrado))
 else:
     st.warning("Não há dados disponíveis para esta praia.")
+
+# =================================================================
+# MÉTRICAS GERAIS DA PRAIA SELECIONADA
+# =================================================================
+total = len(df_filtrado)
+proprias = (df_filtrado["Classificação"] == "Própria").sum()
+improprias = (df_filtrado["Classificação"] == "Imprópria").sum()
+
+col1, col2, col3 = st.columns(3)
+col1.metric("Total de análises", total)
+col2.metric("Próprias", proprias)
+col3.metric("Impróprias", improprias)
 
 
 # =================================================================
