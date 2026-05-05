@@ -20,16 +20,9 @@ img = get_base64("images-removebg-preview.png")
 
 st.markdown(
     f"""
-    <style>
-    .logo {{
-        position: fixed;
-        top: 75px;
-        right: 25px;
-        width: 100px;
-        z-index: 1000;
-    }}
-    </style>
-    <img class="logo" src="data:image/png;base64,{img}">
+    <div style="text-align: right;">
+        <img src="data:image/png;base64,{img}" width="80">
+    </div>
     """,
     unsafe_allow_html=True
 )
