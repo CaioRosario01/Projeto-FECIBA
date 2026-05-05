@@ -5,6 +5,34 @@ import streamlit as st          # Framework para interface web
 import pandas as pd             # Manipulação e análise de dados
 from mapa import criar_mapa      # Função customizada para o mapa
 from streamlit_folium import st_folium  # Integração Folium/Streamlit
+import base64   #Transforma arquivo binário em texto
+
+def get_base64(path):
+    with open(path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
+
+
+#==================================================================
+# LOGO CPM
+#=================================================================
+
+img = get_base64("images-removebg-preview.png")
+
+st.markdown(
+    f"""
+    <style>
+    .logo {{
+        position: fixed;
+        top: 75px;
+        right: 25px;
+        width: 100px;
+        z-index: 1000;
+    }}
+    </style>
+    <img class="logo" src="data:image/png;base64,{img}">
+    """,
+    unsafe_allow_html=True
+)
 
 # =================================================================
 # CONFIGURAÇÃO DA PÁGINA
@@ -127,6 +155,7 @@ if not df_filtrado.empty:
         st.metric("Total de análises", len(df_filtrado))
 else:
     st.warning("Não há dados disponíveis para esta praia.")
+
 
 # =================================================================
 # MAPA GEOGRÁFICO
