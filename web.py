@@ -167,14 +167,23 @@ col3.metric("Impróprias", improprias)
 #Compartilhando no WhatsApp
 #==================================================================
 def gerar_mensagem(praia, status, data, alerta):
+    
+    # Ajusta o texto do alerta
+    if alerta == "Sem alerta recente":
+        alerta_formatado = "✅ Sem alerta recente"
+    else:
+        alerta_formatado = f"⚠️ {alerta}"
+    
+    # Monta a mensagem
     msg = f"""🏖️ Praia: {praia}
 📊 Status: {status}
 📅 Última análise: {data}
-⚠️ {alerta}
+{alerta_formatado}
 
 Veja mais detalhes:
 https://projeto-feciba-i5ewwvwiwsiekchftmkvx6.streamlit.app/
 """
+    
     return urllib.parse.quote(msg)
 
 msg = gerar_mensagem(
