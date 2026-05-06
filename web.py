@@ -61,10 +61,16 @@ st.info("ℹ️ Veja mais informações sobre o Projeto PraiaCheck na barra late
 # FILTROS E LÓGICA DE SELEÇÃO
 # =================================================================
 # Seletor de praias disponível na base
+praias = sorted(df["Praia"].unique())
 praia = st.pills(
     "Escolha a praia:",
-    sorted(df["Praia"].unique())
+    praias,
+    default=praias[0]  # 👈 seleciona automaticamente
 )
+
+if praia is None:
+    praia = praias[0]
+
 
 # Filtra dados específicos da praia escolhida e ordena pela data mais recente
 df_filtrado = df[df["Praia"] == praia]
