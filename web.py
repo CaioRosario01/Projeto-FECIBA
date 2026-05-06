@@ -6,6 +6,7 @@ import pandas as pd             # Manipulação e análise de dados
 from mapa import criar_mapa      # Função customizada para o mapa
 from streamlit_folium import st_folium  # Integração Folium/Streamlit
 import base64   #Transforma arquivo binário em texto
+import urllib.parse  # Para manipulação de URLs
 
 def get_base64(path):
     with open(path, "rb") as f:
@@ -132,6 +133,15 @@ if not df_filtrado.empty:
         
         st.caption(f"Última análise: {ultima_data.date()}")
 
+        # Criar alerta simples
+        ultimas = df_filtrado.sort_values("data", ascending=False).head(3)
+
+        if len(ultimas) == 3 and all(ultimas["Classificação"] == "Imprópria"):
+            alerta = "3 análises seguidas impróprias"
+        else:
+            alerta = "Sem alerta recente"
+
+
 else:
     st.warning("Não há dados disponíveis para esta praia.")
 
@@ -147,6 +157,39 @@ col1.metric("Total de análises", total)
 col2.metric("Próprias", proprias)
 col3.metric("Impróprias", improprias)
 
+#==================================================================
+#Compartilhando no WhatsApp
+#==================================================================
+def gerar_mensagem(praia, status, data, alerta):
+    msg = f"""🏖️ Praia: {praia}
+📊 Status: {status}
+📅 Última análise: {data}
+⚠️ {alerta}
+
+Veja mais detalhes:
+https://projeto-feciba-i5ewwvwiwsiekchftmkvx6.streamlit.app/
+"""
+    return urllib.parse.quote(msg)
+
+msg = gerar_mensagem(
+    praia,
+    ultima_classificacao,
+    ultima_data.date(),
+    alerta
+)
+
+#==============================================================
+#Botão de compartilhamento
+#==============================================================
+st.markdown(f"""
+<a href="https://wa.me/?text={msg}" target="_blank">
+    <button style="padding:10px 20px; background-color:#25D366; color:white; border:none; border-radius:8px;">
+        Compartilhar no WhatsApp
+    </button>
+</a>
+""", unsafe_allow_html=True)
+
+st.divider()
 
 # =================================================================
 # MAPA GEOGRÁFICO
@@ -181,7 +224,7 @@ with c2:
 # =================================================================
 st.sidebar.title("Sobre")
 st.sidebar.markdown("""
-**Projeto:** Deu Praia  
+**Projeto:** PraiaCheck 
 
 Sistema de divulgação da qualidade da água nas praias de Ilhéus.
 Este sistema foi desenvolvido por estudantes da 3ªB do Colégio da Polícia Militar Rômulo Galvão, 

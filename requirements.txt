@@ -3,3 +3,5 @@ pandas
 matplotlib
 folium
 streamlit-folium
+base64
+urllib.parse
