@@ -8,6 +8,7 @@ from streamlit_folium import st_folium  # Integração Folium/Streamlit
 import base64   #Transforma arquivo binário em texto
 import urllib.parse  # Para manipulação de URLs
 
+
 def get_base64(path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
@@ -55,8 +56,11 @@ risco = df.groupby("Praia")["score"].mean().sort_values()
 # =================================================================
 st.title("PraiaCheck: Sistema de Balneabilidade - Ilhéus")
 st.markdown("Divulgação da qualidade da água nas praias de Ilhéus")
-st.info("ℹ️ Veja mais informações sobre o Projeto PraiaCheck na barra lateral")
+# Criar 3 colunas, a do meio é onde o conteúdo fica
+col1, col2, col3 = st.columns([1, 1, 1]) 
 
+with col1:
+    st.info("ℹ️ Veja mais informações sobre o Projeto PraiaCheck na barra lateral")
 # =================================================================
 # FILTROS E LÓGICA DE SELEÇÃO
 # =================================================================
@@ -210,6 +214,11 @@ st.divider()
 # MAPA GEOGRÁFICO
 # =================================================================
 st.subheader("Mapa das praias: ")
+# Criar 3 colunas, a do meio é onde o conteúdo fica
+col1, col2, col3 = st.columns([2, 1, 1]) 
+
+with col1:
+    st.info("ℹ️ Marcadores verdes indicam praias próprias para banho; vermelhos indicam praias impróprias.")
 
 # Dicionário de Coordenadas (Latitude, Longitude)
 coordenadas = {
@@ -227,12 +236,16 @@ coordenadas = {
     "Olivença": [-14.93016272245089, -39.01641369689538],
 }
 
-# Centralização e exibição do mapa via Folium
+# =================================================================
+#Legenda do mapa
+#==================================================================
+
 mapa = criar_mapa(df, coordenadas)
+
+# Centralização e exibição do mapa via Folium
 c1, c2, c3 = st.columns([1, 3, 1])
 with c2:
     st_folium(mapa, width=800, height=500)
-
 
 # =================================================================
 # BARRA LATERAL (SIDEBAR) - SOBRE O PROJETO
@@ -241,12 +254,12 @@ st.sidebar.title("Sobre")
 st.sidebar.markdown("""
 **Projeto:** PraiaCheck 
 
-Sistema de divulgação da qualidade da água nas praias de Ilhéus.
+Sistema de divulgação da qualidade da água nas praias de Ilhéus-BA.
 Este sistema foi desenvolvido por estudantes da 3ªB do Colégio da Polícia Militar Rômulo Galvão, 
 com o objetivo de apresentar dados sobre a qualidade da água das praias de Ilhéus.
 
 O projeto utiliza dados públicos de balneabilidade, organizados e analisados por meio de Python, 
-com o intuito de facilitar o acesso à informação pela população ilheense.
+com o intuito de facilitar o acesso à informação pela população.
 
 **Equipe:**
 - Adriel de Jesus
