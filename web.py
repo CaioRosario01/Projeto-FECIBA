@@ -184,8 +184,7 @@ def gerar_mensagem(praia, status, data, alerta):
 📅 Última análise: {data}
 {alerta_formatado}
 
-Veja mais detalhes:
-https://projeto-feciba-i5ewwvwiwsiekchftmkvx6.streamlit.app/
+Veja mais detalhes:https://praiacheck.streamlit.app/
 """
     
     return urllib.parse.quote(msg)
